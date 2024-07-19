@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { DropdownMenu } from 'bits-ui';
 	import { flyAndScale } from '$lib/utils/transitions';
-	import { getContext } from 'svelte';
+	import { getContext, onMount } from 'svelte';
 
 	import Dropdown from '$lib/components/common/Dropdown.svelte';
 	import GarbageBin from '$lib/components/icons/GarbageBin.svelte';
@@ -12,8 +12,10 @@
 	import ArchiveBox from '$lib/components/icons/ArchiveBox.svelte';
 	import DocumentDuplicate from '$lib/components/icons/DocumentDuplicate.svelte';
 	import ArrowDownTray from '$lib/components/icons/ArrowDownTray.svelte';
-
+	import { user } from '$lib/stores';
 	const i18n = getContext('i18n');
+	// import hasModelAccess from '$lib/components/workspace/Models.svelte'
+
 
 	export let model;
 
@@ -26,7 +28,59 @@
 	export let onClose: Function;
 
 	let show = false;
+
+	let mappings = []
+
+	onMount(async () => {
+		console.log("?????")
+		// Legacy code to sync localModelfiles with models
+		await fetchAndSetModels(localStorage.token);
+	});
+	const getModelsWithUid = async (token) => {
+		const response = await fetch('http://127.0.0.1:8080/api/v1/models/all_with_uid', {
+			headers: {
+				'Authorization': `Bearer ${token}`
+			}
+		});
+		return await response.json();
+	};
+
+	export const fetchAndSetModels = async (token) => {
+		const modelsData = await getModelsWithUid(token)
+		mappings = modelsData
+		console.log("Processed Models",modelsData)
+};
+
+	export function hasModelAccess(modelId) {
+		console.log("????")
+	if ($user?.role === 'admin')
+		{
+			return true;
+		}
+  let hasAccess = false;
+
+  for (const element of mappings) {
+    console.log("element111", element, typeof element);
+    console.log("modelId111", modelId)
+
+    if (element[modelId] == $user?.id) {
+      console.log("Access granted");
+      hasAccess = true;
+      break; // Exit the loop immediately
+    }
+  }
+
+  return hasAccess;
+}
+
+const give_true = (param) => {
+    console.log(param)
+		return Math.random() >= 0.5;
+	};
+
 </script>
+
+
 
 <Dropdown
 	bind:show
@@ -134,15 +188,17 @@
 
 			<hr class="border-gray-100 dark:border-gray-800 my-1" />
 
-			<DropdownMenu.Item
-				class="flex  gap-2  items-center px-3 py-2 text-sm  font-medium cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
-				on:click={() => {
-					deleteHandler();
-				}}
-			>
-				<GarbageBin strokeWidth="2" />
-				<div class="flex items-center">{$i18n.t('Delete')}</div>
-			</DropdownMenu.Item>
+			{#if hasModelAccess(model.id)}
+					<DropdownMenu.Item
+						class="flex gap-2 items-center px-3 py-2 text-sm font-medium cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
+						on:click={() => {
+							deleteHandler();
+						}}
+					>
+						<GarbageBin strokeWidth="2" />
+						<div class="flex items-center">{$i18n.t('Delete')}</div>
+					</DropdownMenu.Item>
+			{/if}
 		</DropdownMenu.Content>
 	</div>
 </Dropdown>

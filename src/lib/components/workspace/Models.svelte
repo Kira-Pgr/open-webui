@@ -34,6 +34,50 @@
 	let sortable = null;
 	let searchValue = '';
 
+	let mappings = []
+
+	const getModelsWithUid = async (token) => {
+		const response = await fetch('http://127.0.0.1:8080/api/v1/models/all_with_uid', {
+			headers: {
+				'Authorization': `Bearer ${token}`
+			}
+		});
+		return await response.json();
+	};
+
+	export const fetchAndSetModels = async (token) => {
+		const modelsData = await getModelsWithUid(token)
+		mappings = modelsData
+		console.log("Processed Models",modelsData)
+};
+
+	export function hasModelAccess(modelId) {
+	if ($user?.role === 'admin')
+		{
+			return true;
+		}
+  let hasAccess = false;
+
+  for (const element of mappings) {
+    //console.log("element", element, typeof element);
+    //console.log("modelId", modelId)
+
+    if (element[modelId] == $user?.id) {
+      //console.log("Access granted");
+      hasAccess = true;
+      break; // Exit the loop immediately
+    }
+  }
+
+  return hasAccess;
+}
+
+
+	const give_true = (param) => {
+    console.log(param)
+		return Math.random() >= 0.5;
+	};
+
 	const deleteModelHandler = async (model) => {
 		console.log(model.info);
 		if (!model?.info) {
@@ -176,9 +220,14 @@
 	};
 
 	onMount(async () => {
+		console.log("?????")
 		// Legacy code to sync localModelfiles with models
+		await fetchAndSetModels(localStorage.token);
+		console.log("Models",$models);
+		console.log("?????");
 		_models = $models;
 		localModelfiles = JSON.parse(localStorage.getItem('modelfiles') ?? '[]');
+
 
 		if (localModelfiles) {
 			console.log(localModelfiles);
@@ -314,6 +363,7 @@
 				</div>
 			</a>
 			<div class="flex flex-row gap-0.5 self-center">
+			{#if hasModelAccess(model.id)}
 				<a
 					class="self-center w-fit text-sm px-2 py-2 dark:text-gray-300 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-xl"
 					type="button"
@@ -334,6 +384,7 @@
 						/>
 					</svg>
 				</a>
+				{/if}
 
 				<ModelMenu
 					{model}

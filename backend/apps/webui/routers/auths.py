@@ -61,7 +61,7 @@ async def get_session_user(
         value=token,
         httponly=True,  # Ensures the cookie is not accessible via JavaScript
     )
-
+    print("User id is", user.id)
     return {
         "id": user.id,
         "email": user.email,

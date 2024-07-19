@@ -179,7 +179,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    docs_url="/docs" if ENV == "dev" else None, redoc_url=None, lifespan=lifespan
+    docs_url="/docs", redoc_url=None, lifespan=lifespan
 )
 
 app.state.config = AppConfig()
@@ -960,10 +960,10 @@ async def get_all_models(user_id: str = "", user_role: str = ""):
         ]
 
     models = pipe_models + openai_models + ollama_models
-    if user_id and user_role:
-        custom_models = Models.get_user_models(user_id, user_role)
-    else:
-        custom_models = Models.get_all_models()
+    # if user_id and user_role:
+    #    custom_models = Models.get_user_models(user_id, user_role)
+    # else:
+    custom_models = Models.get_all_models()
     for custom_model in custom_models:
         if custom_model.base_model_id == None:
             for model in models:

@@ -1,6 +1,6 @@
 from fastapi import Depends, FastAPI, HTTPException, status, Request
 from datetime import datetime, timedelta
-from typing import List, Union, Optional
+from typing import List, Union, Optional, Dict
 
 from fastapi import APIRouter
 from pydantic import BaseModel
@@ -12,6 +12,15 @@ from utils.utils import get_verified_user, get_admin_user
 from constants import ERROR_MESSAGES
 
 router = APIRouter()
+
+
+class ModelUserMapping(BaseModel):
+    id: str
+    user_id: str
+
+
+class ModelsMappingResponse(BaseModel):
+    models: List[ModelUserMapping]
 
 ###########################
 # getModels
@@ -80,7 +89,7 @@ async def update_model_by_id(
     request: Request,
     id: str,
     form_data: ModelForm,
-    user=Depends(get_verified_user),
+    user=Depends(get_admin_user),
 ):
     model = Models.get_model_by_id(id)
     if model:
@@ -112,3 +121,14 @@ async def update_model_by_id(
 async def delete_model_by_id(id: str, user=Depends(get_verified_user)):
     result = Models.delete_model_by_id(id)
     return result
+
+
+@router.get("/all_with_uid", response_model=List[Dict])
+async def get_all_models_and_uid():
+    try:
+        models = Models.get_all_models()
+        result = [{model.id: model.user_id} for model in models]
+        return result
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        raise
